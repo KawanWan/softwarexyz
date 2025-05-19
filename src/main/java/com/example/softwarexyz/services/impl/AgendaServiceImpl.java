@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.softwarexyz.model.Agenda;
 import com.example.softwarexyz.repository.AgendaRepository;
+import com.example.softwarexyz.repository.EspecializacaoRepository;
 import com.example.softwarexyz.services.AgendaService;
 
 import java.util.List;
@@ -18,10 +19,24 @@ public class AgendaServiceImpl implements AgendaService {
     @Autowired
     private AgendaRepository agendaRepository;
 
+    @Autowired
+    private EspecializacaoRepository especializacaoRepository;
+
     @Override
     public Agenda salvar(Agenda novaAgenda) {
+        Long professorId = novaAgenda.getProfessor().getId();
+        Long cursoId = novaAgenda.getCurso().getId();
+
+        boolean especializado = especializacaoRepository.existsByProfessorIdAndCursoId(professorId, cursoId);
+        if (!especializado) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "O professor selecionado não é especializado neste curso."
+            );
+        }
+
         List<Agenda> conflitos = agendaRepository.verificarConflito(
-            novaAgenda.getProfessor().getId(),
+            professorId,
             novaAgenda.getDataInicio(),
             novaAgenda.getDataFim()
         );

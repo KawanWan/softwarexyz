@@ -1,7 +1,9 @@
 package com.example.softwarexyz.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.softwarexyz.model.Agenda;
 import com.example.softwarexyz.repository.AgendaRepository;
@@ -14,21 +16,38 @@ import java.util.Optional;
 public class AgendaServiceImpl implements AgendaService {
 
     @Autowired
-    private AgendaRepository repository;
+    private AgendaRepository agendaRepository;
 
-    public Agenda salvar(Agenda a) {
-        return repository.save(a);
+    @Override
+    public Agenda salvar(Agenda novaAgenda) {
+        List<Agenda> conflitos = agendaRepository.verificarConflito(
+            novaAgenda.getProfessor().getId(),
+            novaAgenda.getDataInicio(),
+            novaAgenda.getDataFim()
+        );
+
+        if (!conflitos.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "O professor já está agendado nesse período."
+            );
+        }
+
+        return agendaRepository.save(novaAgenda);
     }
 
+    @Override
     public List<Agenda> listar() {
-        return repository.findAll();
+        return agendaRepository.findAll();
     }
 
+    @Override
     public Optional<Agenda> buscar(Long id) {
-        return repository.findById(id);
+        return agendaRepository.findById(id);
     }
 
+    @Override
     public void deletar(Long id) {
-        repository.deleteById(id);
+        agendaRepository.deleteById(id);
     }
 }
